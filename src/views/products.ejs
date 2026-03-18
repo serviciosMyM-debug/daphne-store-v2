@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+  <meta name="description" content="Colección de productos Daphné" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main>
+    <section class="products-page-hero">
+      <div class="container">
+        <span class="eyebrow">Colección Daphné</span>
+        <h1>Productos</h1>
+        <p>Descubrí prendas delicadas, modernas y premium diseñadas para destacar tu estilo.</p>
+      </div>
+    </section>
+
+    <section class="section section-products-v2">
+      <div class="container">
+        <form method="GET" action="/productos" class="products-filter-bar">
+          <div class="products-filter-grid">
+            <input type="text" name="q" placeholder="Buscar..." value="<%= filters.q || '' %>">
+
+            <select name="category">
+              <option value="">Todas las categorías</option>
+              <% categories.forEach(cat => { %>
+                <option value="<%= cat %>" <%= filters.category === cat ? 'selected' : '' %>><%= cat %></option>
+              <% }) %>
+            </select>
+
+            <select name="color">
+              <option value="">Todos los colores</option>
+              <% colors.forEach(color => { %>
+                <option value="<%= color %>" <%= filters.color === color ? 'selected' : '' %>><%= color %></option>
+              <% }) %>
+            </select>
+
+            <select name="size">
+              <option value="">Todos los talles</option>
+              <% sizes.forEach(size => { %>
+                <option value="<%= size %>" <%= filters.size === size ? 'selected' : '' %>><%= size %></option>
+              <% }) %>
+            </select>
+
+            <select name="status">
+              <option value="">Todos los estados</option>
+              <option value="in_stock" <%= filters.status === 'in_stock' ? 'selected' : '' %>>En stock</option>
+              <option value="sale" <%= filters.status === 'sale' ? 'selected' : '' %>>Sale</option>
+              <option value="sold_out" <%= filters.status === 'sold_out' ? 'selected' : '' %>>Agotado</option>
+            </select>
+
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+          </div>
+        </form>
+
+        <% if (!products.length) { %>
+          <div class="products-empty-state">
+            <div class="products-empty-box">
+              <h3>No encontramos productos con esos filtros</h3>
+              <p>Probá cambiando categoría, color, talle o búsqueda para encontrar la prenda ideal.</p>
+              <a href="/productos" class="btn btn-outline">Ver toda la colección</a>
+            </div>
+          </div>
+        <% } else { %>
+          <div class="products-grid-v3">
+            <% products.forEach(product => { %>
+              <article class="product-card-v3">
+                <div class="product-image-wrap-v3">
+                  <span class="product-badge <%= product.status %>">
+                    <%= product.status === 'sale' ? 'SALE' : product.status === 'sold_out' ? 'AGOTADO' : 'EN STOCK' %>
+                  </span>
+
+                  <a href="/producto/<%= product.slug %>">
+                    <img src="<%= product.cover_image %>" alt="<%= product.name %>">
+                  </a>
+                </div>
+
+                <div class="product-content-v3">
+                  <span class="product-category-v3"><%= product.category %></span>
+                  <h3><%= product.name.toUpperCase() %></h3>
+                  <p class="price"><%= formatCurrency(product.price) %></p>
+
+                  <div class="product-actions-v3">
+                    <a href="/producto/<%= product.slug %>" class="btn btn-outline">Ver detalle</a>
+                  </div>
+                </div>
+              </article>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+  <script src="/js/main.js"></script>
+</body>
+</html>

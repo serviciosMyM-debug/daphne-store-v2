@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+  <meta name="description" content="<%= product.name %> - Daphné" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main>
+    <section class="product-detail-page">
+      <div class="container product-detail-layout-v2">
+        <div class="product-gallery-v2">
+          <div class="product-main-image-v2">
+            <img
+              id="mainProductImage"
+              src="<%= product.images?.[0]?.image_url || '/images/hero-placeholder.jpg' %>"
+              alt="<%= product.name %>"
+            >
+          </div>
+
+          <% if (product.images && product.images.length > 1) { %>
+            <div class="product-thumbs-v2">
+              <% product.images.forEach((image) => { %>
+                <button
+                  type="button"
+                  class="thumb-btn thumb-btn-v2"
+                  data-image="<%= image.image_url %>"
+                >
+                  <img src="<%= image.image_url %>" alt="<%= image.alt_text || product.name %>">
+                </button>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+
+        <div class="product-info-v2">
+          <span class="product-badge <%= product.status %>">
+            <%= product.status === 'sale' ? 'SALE' : product.status === 'sold_out' ? 'AGOTADO' : 'EN STOCK' %>
+          </span>
+
+          <span class="product-category-v3"><%= product.category %></span>
+          <h1><%= product.name %></h1>
+          <p class="price big"><%= formatCurrency(product.price) %></p>
+
+          <p class="product-description-v2"><%= product.description %></p>
+
+          <div class="product-meta-v2">
+            <% if (product.variants && product.variants.length) { %>
+              <div class="product-meta-block">
+                <strong>Variantes disponibles</strong>
+                <div class="meta-pills">
+                  <% product.variants.forEach((variant) => { %>
+                    <span class="meta-pill">
+                      <%= variant.color_name %> · <%= variant.size_name %> · <%= variant.stock %>u
+                    </span>
+                  <% }) %>
+                </div>
+              </div>
+            <% } %>
+          </div>
+
+          <form action="/carrito/agregar" method="POST" class="product-buy-form-v2" id="productBuyForm">
+            <input type="hidden" name="productId" value="<%= product.id %>">
+            <input type="hidden" name="variantId" id="variantIdInput" value="">
+
+            <% 
+              const availableColors = [...new Set((product.variants || []).map(v => v.color_name))];
+              const availableSizes = [...new Set((product.variants || []).map(v => v.size_name))];
+            %>
+
+            <% if (availableColors.length) { %>
+              <div class="form-row-v2">
+                <label>Color</label>
+                <div class="selector-pills" id="colorSelector">
+                  <% availableColors.forEach((color, index) => { %>
+                    <button
+                      type="button"
+                      class="selector-pill selector-pill-color <%= index === 0 ? 'active' : '' %>"
+                      data-color="<%= color %>"
+                    >
+                      <%= color %>
+                    </button>
+                  <% }) %>
+                </div>
+              </div>
+            <% } %>
+
+            <% if (availableSizes.length) { %>
+              <div class="form-row-v2">
+                <label>Talle</label>
+                <div class="selector-pills" id="sizeSelector">
+                  <% availableSizes.forEach((size, index) => { %>
+                    <button
+                      type="button"
+                      class="selector-pill selector-pill-size <%= index === 0 ? 'active' : '' %>"
+                      data-size="<%= size %>"
+                    >
+                      <%= size %>
+                    </button>
+                  <% }) %>
+                </div>
+              </div>
+            <% } %>
+
+            <div class="form-row-v2">
+              <label>Variante elegida</label>
+              <div class="selected-variant-box" id="selectedVariantBox">
+                Seleccioná color y talle
+              </div>
+            </div>
+
+            <div class="form-row-v2">
+              <label for="quantity">Cantidad</label>
+              <input id="quantity" type="number" name="quantity" min="1" max="10" value="1">
+            </div>
+
+            <div class="product-detail-actions-v2">
+              <button class="btn btn-primary" type="submit" id="addToCartBtn">Agregar al carrito</button>
+
+              <a
+                class="btn btn-secondary"
+                target="_blank"
+                rel="noopener noreferrer"
+                href="https://wa.me/<%= site?.whatsapp || '' %>?text=<%= encodeURIComponent(`Hola, quiero consultar por el producto: ${product.name}`) %>"
+              >
+                Consultar por WhatsApp
+              </a>
+            </div>
+
+            <script>
+              window.productVariants = <%- JSON.stringify(product.variants || []) %>;
+            </script>
+          </form>
+
+          <% if (product.size_chart_html) { %>
+            <div class="size-chart-box-v2">
+              <h3>Tabla de talles</h3>
+              <div class="size-chart-html-v2">
+                <%- product.size_chart_html %>
+              </div>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+  <script src="/js/main.js"></script>
+</body>
+</html>

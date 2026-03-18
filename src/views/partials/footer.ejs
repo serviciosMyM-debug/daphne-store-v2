@@ -1,0 +1,34 @@
+<footer class="site-footer footer-v2">
+  <div class="container footer-grid">
+    <div>
+      <h4>Daphné</h4>
+      <p>Boutique femenina premium con estética moderna, delicada y refinada.</p>
+    </div>
+
+    <div>
+      <h4>Navegación</h4>
+      <ul>
+        <li><a href="/">Inicio</a></li>
+        <li><a href="/#destacados">Destacados</a></li>
+        <li><a href="/productos">Productos</a></li>
+        <li><a href="/#contacto">Contacto</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h4>Contacto</h4>
+      <p>WhatsApp: <%= site?.whatsapp || '' %></p>
+      <p>Email: <%= site?.email || '' %></p>
+      <p><%= site?.site_name || 'Daphné' %></p>
+    </div>
+  </div>
+
+  <div class="container footer-bottom">
+    <p>
+      © <%= new Date().getFullYear() %> Hecho por
+      <a href="https://www.serviciosmym.com.ar" target="_blank" class="footer-link">
+        Servicios MyM
+      </a>. Todos los derechos reservados.
+    </p>
+  </div>
+</footer>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+  <meta name="description" content="Daphné - boutique femenina premium" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main>
+    <section class="hero-v2" id="heroV2">
+  <div class="hero-v2-bg"></div>
+  <div class="hero-v2-topfade"></div>
+  <div class="hero-v2-overlay"></div>
+
+  <div class="container hero-v2-content">
+    <div class="hero-v2-center">
+      <img src="/images/daphne-logo.png" alt="Daphné" class="hero-v2-logo">
+
+      <h1 class="hero-v2-title"><%= site?.hero_title || 'Tu outfit es una extensión de ti' %></h1>
+      <p class="hero-v2-subtitle"><%= site?.hero_subtitle || 'Reflejando identidad, estilo y presencia' %></p>
+
+      <div class="hero-v2-actions">
+        <a href="/productos" class="btn btn-primary">Ver productos</a>
+        <a href="/#destacados" class="btn btn-secondary">Ver destacados</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+    <section id="destacados" class="section section-white">
+      <div class="container">
+        <div class="section-head section-head-centered">
+          <span class="eyebrow">Destacados</span>
+          <h2>Productos destacados</h2>
+        </div>
+
+        <% if (!featuredProducts.length) { %>
+          <div class="empty-state">
+            <h3>No hay productos destacados todavía</h3>
+          </div>
+        <% } else { %>
+          <div class="product-grid product-grid-v2">
+            <% featuredProducts.forEach(product => { %>
+              <article class="product-card-v2">
+                <div class="product-image-wrap-v2">
+                  <span class="product-badge <%= product.status %>">
+                    <%= product.status === 'sale' ? 'SALE' : product.status === 'sold_out' ? 'AGOTADO' : 'EN STOCK' %>
+                  </span>
+                  <a href="/producto/<%= product.slug %>">
+                    <img src="<%= product.cover_image %>" alt="<%= product.name %>">
+                  </a>
+                </div>
+
+                <div class="product-content-v2">
+                  <h3><%= product.name.toUpperCase() %></h3>
+                  <p class="price"><%= formatCurrency(product.price) %></p>
+                  <a href="/producto/<%= product.slug %>" class="btn btn-outline">Ver detalle</a>
+                </div>
+              </article>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <section class="section section-cream-v2">
+      <div class="container">
+        <div class="section-head section-head-centered">
+          <span class="eyebrow">Catálogo</span>
+          <h2>Nuestros productos</h2>
+        </div>
+
+        <% if (!featuredProducts.length) { %>
+          <div class="empty-state">
+            <h3>No hay productos para mostrar</h3>
+          </div>
+        <% } else { %>
+          <div class="product-grid product-grid-v2">
+            <% featuredProducts.forEach(product => { %>
+              <article class="product-card-v2 catalog-card-v2">
+                <div class="product-image-wrap-v2">
+                  <a href="/producto/<%= product.slug %>">
+                    <img src="<%= product.cover_image %>" alt="<%= product.name %>">
+                  </a>
+                </div>
+
+                <div class="product-content-v2">
+                  <h3><%= product.name.toUpperCase() %></h3>
+                  <p class="price"><%= formatCurrency(product.price) %></p>
+                  <a href="/producto/<%= product.slug %>" class="btn btn-outline">Ver detalle</a>
+                </div>
+              </article>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <section class="section section-white">
+      <div class="container">
+        <div class="section-head section-head-centered">
+          <span class="eyebrow">Opiniones</span>
+          <h2>Clientes que confían en Daphné</h2>
+        </div>
+
+        <% if (!reviews.length) { %>
+          <div class="empty-state">
+            <h3>No hay opiniones cargadas todavía</h3>
+          </div>
+        <% } else { %>
+          <div class="reviews-grid reviews-grid-v2">
+            <% reviews.forEach(review => { %>
+              <article class="review-card review-card-v2">
+                <div class="stars"><%= '★'.repeat(review.stars) %><%= '☆'.repeat(5 - review.stars) %></div>
+                <p>“<%= review.comment %>”</p>
+                <strong><%= review.customer_name %></strong>
+              </article>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </section>
+
+    <section id="contacto" class="section section-contact-v2">
+      <div class="container contact-grid-v2">
+        <div class="contact-block-v2">
+          <span class="eyebrow">Contacto</span>
+          <h2>Estamos para ayudarte</h2>
+          <p>Consultanos por prendas, talles, disponibilidad o compras por mayor.</p>
+
+          <ul class="contact-list-v2">
+            <li><strong>WhatsApp:</strong> <%= site?.whatsapp || '' %></li>
+            <li><strong>Email:</strong> <%= site?.email || '' %></li>
+            <li><strong>Marca:</strong> <%= site?.site_name || 'Daphné' %></li>
+          </ul>
+        </div>
+
+        <div class="shipping-box-v2">
+          <span class="eyebrow">Envíos</span>
+          <h2>Información de entrega</h2>
+          <p><%= site?.shipping_text || 'Envíos a todo el país.' %></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <a
+    class="whatsapp-float"
+    href="https://wa.me/<%= site?.whatsapp || '' %>"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="WhatsApp"
+  >
+    <svg viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.05 4.91A9.82 9.82 0 0 0 12.03 2C6.57 2 2.13 6.42 2.13 11.88c0 1.75.46 3.45 1.32 4.95L2 22l5.33-1.4a9.86 9.86 0 0 0 4.7 1.2h.01c5.46 0 9.9-4.43 9.9-9.89a9.8 9.8 0 0 0-2.89-7zM12.04 20.1h-.01a8.16 8.16 0 0 1-4.16-1.14l-.3-.18-3.16.83.84-3.08-.2-.32a8.15 8.15 0 0 1-1.26-4.33 8.24 8.24 0 0 1 8.25-8.22 8.15 8.15 0 0 1 5.83 2.42 8.17 8.17 0 0 1 2.41 5.82 8.24 8.24 0 0 1-8.24 8.2zm4.52-6.16c-.25-.13-1.47-.72-1.7-.8-.23-.08-.4-.13-.57.13-.17.25-.65.8-.8.96-.15.17-.3.19-.55.06-.25-.13-1.05-.39-2-1.25-.74-.66-1.24-1.47-1.38-1.72-.15-.25-.02-.38.11-.5.11-.11.25-.3.38-.44.13-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.57-1.37-.78-1.88-.21-.5-.42-.43-.57-.44h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1s.9 2.43 1.02 2.6c.13.17 1.76 2.69 4.28 3.77.6.26 1.08.42 1.44.53.61.19 1.17.16 1.61.1.49-.07 1.47-.6 1.68-1.18.21-.58.21-1.08.15-1.18-.06-.1-.23-.15-.48-.27z"/>
+    </svg>
+  </a>
+
+  <%- include('partials/footer') %>
+  <script src="/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body class="saas-body">
+  <div class="saas-form-page">
+    <div class="saas-form-top">
+      <div>
+        <span class="saas-eyebrow">Opiniones</span>
+        <h1>Testimonios de clientes</h1>
+        <p>Acá podés cargar opiniones que se verán en la página principal con estrellas.</p>
+      </div>
+
+      <div class="saas-top-actions">
+        <a href="/admin" class="saas-btn saas-btn-outline">Volver al dashboard</a>
+      </div>
+    </div>
+
+    <div class="saas-form-grid">
+      <section class="saas-card saas-form-section">
+        <h2>Nueva opinión</h2>
+
+        <form method="POST" action="/admin/reviews" class="saas-product-form">
+          <label>Nombre del cliente</label>
+          <input type="text" name="customer_name" required>
+
+          <label>Comentario</label>
+          <textarea name="comment" rows="5" required></textarea>
+
+          <label>Estrellas</label>
+          <select name="stars" required>
+            <option value="5">5 estrellas</option>
+            <option value="4">4 estrellas</option>
+            <option value="3">3 estrellas</option>
+            <option value="2">2 estrellas</option>
+            <option value="1">1 estrella</option>
+          </select>
+
+          <label class="saas-checkbox">
+            <input type="checkbox" name="is_active" checked>
+            Mostrar esta opinión en la home
+          </label>
+
+          <button class="saas-btn saas-btn-primary" type="submit">Guardar opinión</button>
+        </form>
+      </section>
+
+      <section class="saas-card saas-form-section">
+        <h2>Opiniones cargadas</h2>
+
+        <% if (!reviews.length) { %>
+          <div class="saas-empty">Todavía no hay opiniones cargadas.</div>
+        <% } else { %>
+          <div class="saas-review-list">
+            <% reviews.forEach(review => { %>
+              <article class="saas-review-card">
+                <div class="saas-review-top">
+                  <div>
+                    <strong><%= review.customer_name %></strong>
+                    <small><%= review.is_active ? 'Visible en home' : 'Oculta' %></small>
+                  </div>
+                  <div class="saas-review-stars">
+                    <%= '★'.repeat(review.stars) %><%= '☆'.repeat(5 - review.stars) %>
+                  </div>
+                </div>
+
+                <p><%= review.comment %></p>
+
+                <form method="POST" action="/admin/reviews/<%= review.id %>?_method=DELETE" onsubmit="return confirm('¿Eliminar opinión?')">
+                  <button class="saas-btn saas-btn-danger saas-btn-sm" type="submit">Eliminar</button>
+                </form>
+              </article>
+            <% }) %>
+          </div>
+        <% } %>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

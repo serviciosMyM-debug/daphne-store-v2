@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="saas-body">
+  <div class="saas-shell">
+    <aside class="saas-sidebar">
+  <div class="saas-logo">
+    <span class="saas-logo-mark">D</span>
+    <div>
+      <strong>Daphné Admin</strong>
+      <small>Control comercial</small>
+    </div>
+  </div>
+
+  <nav class="saas-nav">
+    <a class="active" href="/admin">Dashboard</a>
+    <a href="/admin/productos/nuevo">Nuevo producto</a>
+    <a href="/admin/reviews">Opiniones</a>
+    <a href="/admin/pedidos">Pedidos</a>
+  </nav>
+
+  <div class="saas-sidebar-footer">
+    <a href="/admin/settings" class="saas-sidebar-settings">Configuración general</a>
+
+    <form method="POST" action="/admin/logout" class="saas-logout">
+      <button type="submit" class="saas-btn saas-btn-outline">Cerrar sesión</button>
+    </form>
+  </div>
+</aside>
+
+    <main class="saas-main">
+      <header class="saas-topbar">
+        <div>
+          <span class="saas-eyebrow">Panel administrativo</span>
+          <h1>Dashboard general</h1>
+          <p>Vista rápida del catálogo, stock y estructura de la tienda.</p>
+        </div>
+
+        <div class="saas-top-actions">
+          <a href="/admin/productos/nuevo" class="saas-btn saas-btn-primary">+ Agregar producto</a>
+          <a href="/admin/settings" class="saas-btn saas-btn-outline">Editar tienda</a>
+        </div>
+      </header>
+
+      <section class="saas-kpis">
+        <article class="saas-card saas-kpi">
+          <span>Productos</span>
+          <strong><%= stats.totalProducts %></strong>
+          <small>Total cargados</small>
+        </article>
+
+        <article class="saas-card saas-kpi">
+          <span>Destacados</span>
+          <strong><%= stats.featuredProducts %></strong>
+          <small>Visibles en home</small>
+        </article>
+
+        <article class="saas-card saas-kpi">
+          <span>Stock bajo</span>
+          <strong><%= stats.lowStockCount %></strong>
+          <small>Con 5 o menos</small>
+        </article>
+
+        <article class="saas-card saas-kpi">
+          <span>Agotados</span>
+          <strong><%= stats.soldOutCount %></strong>
+          <small>Sin disponibilidad</small>
+        </article>
+
+        <article class="saas-card saas-kpi">
+          <span>Unidades</span>
+          <strong><%= stats.totalStockUnits %></strong>
+          <small>Stock total</small>
+        </article>
+
+        <article class="saas-card saas-kpi">
+          <span>Valor inventario</span>
+          <strong><%= formatCurrency(stats.inventoryValue) %></strong>
+          <small>Estimado por stock</small>
+        </article>
+      </section>
+
+      <section class="saas-grid-2">
+        <article class="saas-card">
+          <div class="saas-card-head">
+            <div>
+              <h2>Productos por categoría</h2>
+              <p>Distribución actual del catálogo</p>
+            </div>
+          </div>
+          <div class="saas-chart-wrap">
+            <canvas id="categoryChart"></canvas>
+          </div>
+        </article>
+
+        <article class="saas-card">
+          <div class="saas-card-head">
+            <div>
+              <h2>Estado del catálogo</h2>
+              <p>En stock, sale y agotados</p>
+            </div>
+          </div>
+          <div class="saas-chart-wrap">
+            <canvas id="statusChart"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <section class="saas-grid-2">
+        <article class="saas-card">
+          <div class="saas-card-head">
+            <div>
+              <h2>Productos con stock bajo</h2>
+              <p>Prioridad para reponer</p>
+            </div>
+          </div>
+
+          <% if (!lowStockProducts.length) { %>
+            <div class="saas-empty">No hay productos con stock bajo en este momento.</div>
+          <% } else { %>
+            <div class="saas-mini-table">
+              <% lowStockProducts.forEach(item => { %>
+                <div class="saas-mini-row">
+                  <div>
+                    <strong><%= item.name %></strong>
+                    <small><%= item.category %></small>
+                  </div>
+                  <span class="saas-stock-pill"><%= item.stock %> u.</span>
+                </div>
+              <% }) %>
+            </div>
+          <% } %>
+        </article>
+
+        <article class="saas-card">
+          <div class="saas-card-head">
+            <div>
+              <h2>Accesos rápidos</h2>
+              <p>Tareas frecuentes del cliente</p>
+            </div>
+          </div>
+
+          <div class="saas-quick-grid">
+            <a href="/admin/productos/nuevo" class="saas-quick-box">
+              <strong>Nuevo artículo</strong>
+              <span>Cargar una prenda nueva</span>
+            </a>
+            <a href="/admin/reviews" class="saas-quick-box">
+              <strong>Opiniones</strong>
+              <span>Gestionar testimonios</span>
+            </a>
+            <a href="/admin/settings" class="saas-quick-box">
+              <strong>Tienda</strong>
+              <span>Editar datos generales</span>
+            </a>
+            <a href="/" class="saas-quick-box">
+              <strong>Ver tienda</strong>
+              <span>Abrir el sitio público</span>
+            </a>
+          </div>
+        </article>
+      </section>
+
+      <section class="saas-card">
+        <div class="saas-card-head saas-card-head-products">
+          <div>
+            <span class="saas-eyebrow">Catálogo</span>
+            <h2>Gestión de productos</h2>
+            <p>El cliente puede agregar, editar o eliminar artículos desde acá.</p>
+          </div>
+
+          <a href="/admin/productos/nuevo" class="saas-btn saas-btn-primary">+ Agregar producto</a>
+        </div>
+
+        <% if (!products.length) { %>
+          <div class="saas-empty">Todavía no hay productos cargados.</div>
+        <% } else { %>
+          <div class="saas-table-wrap">
+            <table class="saas-table">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Categoría</th>
+                  <th>Precio</th>
+                  <th>Stock</th>
+                  <th>Estado</th>
+                  <th>Destacado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% products.forEach(product => { %>
+                  <tr>
+                    <td>
+                      <div class="saas-product-cell">
+                        <img src="<%= product.cover_image %>" alt="<%= product.name %>">
+                        <div>
+                          <strong><%= product.name %></strong>
+                          <small><%= product.slug %></small>
+                        </div>
+                      </div>
+                    </td>
+                    <td><%= product.category %></td>
+                    <td><%= formatCurrency(product.price) %></td>
+                    <td><%= product.stock %></td>
+                    <td>
+                      <span class="saas-status-pill <%= product.status %>">
+                        <%= product.status === 'sale' ? 'SALE' : product.status === 'sold_out' ? 'AGOTADO' : 'EN STOCK' %>
+                      </span>
+                    </td>
+                    <td><%= product.featured ? 'Sí' : 'No' %></td>
+                    <td>
+                      <div class="saas-actions">
+                        <a class="saas-btn saas-btn-sm saas-btn-outline" href="/admin/productos/<%= product.id %>/editar">Editar</a>
+                        <form method="POST" action="/admin/productos/<%= product.id %>?_method=DELETE" onsubmit="return confirm('¿Eliminar producto?')">
+                          <button class="saas-btn saas-btn-sm saas-btn-danger" type="submit">Eliminar</button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const categoryLabels = <%- JSON.stringify(categoryStats.map(item => item.category)) %>;
+    const categoryData = <%- JSON.stringify(categoryStats.map(item => item.total)) %>;
+
+    const statusLabels = <%- JSON.stringify(statusStats.map(item => {
+      if (item.status === 'sale') return 'Sale';
+      if (item.status === 'sold_out') return 'Agotado';
+      return 'En stock';
+    })) %>;
+    const statusData = <%- JSON.stringify(statusStats.map(item => item.total)) %>;
+
+    const css = getComputedStyle(document.documentElement);
+    const navy = css.getPropertyValue('--navy').trim() || '#0d1b2a';
+    const gold = css.getPropertyValue('--gold').trim() || '#c8a96b';
+    const cream = '#efe7db';
+    const soft = '#d9d1c4';
+
+    new Chart(document.getElementById('categoryChart'), {
+      type: 'bar',
+      data: {
+        labels: categoryLabels,
+        datasets: [{
+          label: 'Productos',
+          data: categoryData,
+          backgroundColor: [navy, gold, soft, cream, navy, gold]
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
+
+    new Chart(document.getElementById('statusChart'), {
+      type: 'doughnut',
+      data: {
+        labels: statusLabels,
+        datasets: [{
+          data: statusData,
+          backgroundColor: [navy, gold, soft]
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

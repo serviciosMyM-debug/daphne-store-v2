@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('partials/head') %>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="section">
+    <div class="container narrow">
+      <div class="section-heading">
+        <span class="eyebrow">Envíos</span>
+        <h1>Información de envíos y compras</h1>
+      </div>
+
+      <div class="info-card">
+        <p><%= settings.shipping_text %></p>
+        <ul class="bullet-list">
+          <li>Envíos a todo el país</li>
+          <li>Confirmación y seguimiento por WhatsApp</li>
+          <li>Asistencia para elección de talle y color</li>
+          <li>Atención personalizada para consultas previas</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

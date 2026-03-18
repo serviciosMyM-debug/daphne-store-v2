@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS orders (
+  id SERIAL PRIMARY KEY,
+  customer_name VARCHAR(180) NOT NULL,
+  customer_phone VARCHAR(40),
+  status VARCHAR(30) NOT NULL DEFAULT 'pending',
+  total NUMERIC(12,2) NOT NULL DEFAULT 0,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id SERIAL PRIMARY KEY,
+  order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+  variant_id INTEGER REFERENCES product_variants(id) ON DELETE SET NULL,
+  product_name VARCHAR(180) NOT NULL,
+  color_name VARCHAR(80),
+  size_name VARCHAR(30),
+  quantity INTEGER NOT NULL DEFAULT 1,
+  unit_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+  line_total NUMERIC(12,2) NOT NULL DEFAULT 0
+);

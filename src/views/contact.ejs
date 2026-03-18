@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('partials/head') %>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="section">
+    <div class="container narrow">
+      <div class="section-heading">
+        <span class="eyebrow">Contacto</span>
+        <h1>Estamos para ayudarte</h1>
+        <p><%= settings.contact_text %></p>
+      </div>
+
+      <div class="info-card">
+        <p><strong>WhatsApp:</strong> <a href="https://wa.me/<%= settings.whatsapp %>" target="_blank"><%= settings.whatsapp %></a></p>
+        <p><strong>Email:</strong> <a href="mailto:<%= settings.email %>"><%= settings.email %></a></p>
+        <p><strong>Dominio:</strong> <%= settings.site_domain %></p>
+        <% if (settings.instagram_url) { %>
+          <p><strong>Instagram:</strong> <a href="<%= settings.instagram_url %>" target="_blank"><%= settings.instagram_url %></a></p>
+        <% } %>
+      </div>
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

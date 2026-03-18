@@ -1,0 +1,38 @@
+<header class="site-header site-header-v2" id="siteHeader">
+  <div class="container header-inner-v2">
+    <nav class="nav nav-left">
+      <a href="/" class="<%= currentPath === '/' ? 'active' : '' %>">Inicio</a>
+      <a href="/#destacados">Destacados</a>
+      <a href="/productos" class="<%= currentPath.startsWith('/productos') || currentPath.startsWith('/producto') ? 'active' : '' %>">Productos</a>
+      <a href="/#contacto">Contacto</a>
+    </nav>
+
+    <div class="brand brand-with-logo">
+      <a href="/" class="brand-link brand-link-navbar">
+        <img src="/images/daphne-logo.png" alt="Daphné" class="brand-logo brand-logo-navbar">
+      </a>
+    </div>
+
+    <div class="header-icons header-icons-v2">
+      <a href="/productos?q=" class="header-icon-btn header-icon-clean" title="Buscar" aria-label="Buscar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="6.5"></circle>
+          <path d="m16 16 4 4"></path>
+        </svg>
+      </a>
+
+      <span class="cart-total cart-total-v2"><%= formatCurrency(cartTotal) %></span>
+
+      <a href="/carrito" class="header-icon-btn header-icon-clean" title="Carrito" aria-label="Carrito">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 7h13l-1.2 7H8.3L7 7Z"></path>
+          <path d="M7 7 6 4H3"></path>
+          <circle cx="9.2" cy="18.2" r="1.2"></circle>
+          <circle cx="17.4" cy="18.2" r="1.2"></circle>
+        </svg>
+      </a>
+
+      <a href="/admin/login" class="admin-link-v2" title="Admin">Admin</a>
+    </div>
+  </div>
+</header>

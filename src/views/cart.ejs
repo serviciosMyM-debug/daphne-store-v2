@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+  <meta name="description" content="Carrito de compras Daphné" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main>
+    <section class="products-page-hero">
+      <div class="container">
+        <span class="eyebrow">Tu selección</span>
+        <h1>Carrito</h1>
+        <p>Revisá tus productos antes de finalizar la compra.</p>
+      </div>
+    </section>
+
+    <section class="section section-products-v2">
+      <div class="container cart-layout-v2">
+        <div class="cart-list-v2">
+          <% if (!cart || !cart.items || cart.items.length === 0) { %>
+            <div class="products-empty-box">
+              <h3>Tu carrito está vacío</h3>
+              <p>Agregá productos para continuar con tu compra.</p>
+              <a href="/productos" class="btn btn-outline">Ver productos</a>
+            </div>
+          <% } else { %>
+            <% cart.items.forEach((item, index) => { %>
+              <article class="cart-item-v2">
+                <div class="cart-item-info-v2">
+                  <h3><%= item.name %></h3>
+                  <p>Color: <strong><%= item.color || '-' %></strong></p>
+                  <p>Talle: <strong><%= item.size || '-' %></strong></p>
+                  <p>Precio unitario: <strong><%= formatCurrency(item.price) %></strong></p>
+                </div>
+
+                <div class="cart-item-side-v2">
+                  <form method="POST" action="/carrito/actualizar" class="cart-update-form-v2">
+                    <input type="hidden" name="index" value="<%= index %>">
+                    <label>Cantidad</label>
+                    <input type="number" name="quantity" min="1" value="<%= item.quantity %>">
+                    <button class="btn btn-outline" type="submit">Actualizar</button>
+                  </form>
+
+                  <div class="cart-item-total-v2">
+                    <span>Total</span>
+                    <strong><%= formatCurrency(item.price * item.quantity) %></strong>
+                  </div>
+
+                  <form method="POST" action="/carrito/eliminar">
+                    <input type="hidden" name="index" value="<%= index %>">
+                    <button class="btn btn-secondary" type="submit">Eliminar</button>
+                  </form>
+                </div>
+              </article>
+            <% }) %>
+          <% } %>
+        </div>
+
+        <aside class="cart-summary-v2">
+          <h2>Resumen</h2>
+
+          <div class="cart-summary-line">
+            <span>Subtotal</span>
+            <strong>
+              <%= formatCurrency(
+                (cart?.items || []).reduce((acc, item) => acc + (Number(item.price) * Number(item.quantity)), 0)
+              ) %>
+            </strong>
+          </div>
+
+          <div class="cart-summary-line cart-summary-total">
+            <span>Total</span>
+            <strong>
+              <%= formatCurrency(
+                (cart?.items || []).reduce((acc, item) => acc + (Number(item.price) * Number(item.quantity)), 0)
+              ) %>
+            </strong>
+          </div>
+
+          <% if (cart && cart.items && cart.items.length > 0) { %>
+            <form method="POST" action="/carrito/finalizar-whatsapp" class="checkout-form-v2">
+              <label for="customer_name">Nombre y apellido</label>
+              <input id="customer_name" type="text" name="customer_name" required>
+
+              <label for="customer_phone">Teléfono</label>
+              <input id="customer_phone" type="text" name="customer_phone">
+
+              <label for="notes">Observaciones</label>
+              <textarea id="notes" name="notes" rows="4" placeholder="Aclaraciones para el pedido..."></textarea>
+
+              <button class="btn btn-primary btn-full" type="submit">
+                Finalizar por WhatsApp
+              </button>
+            </form>
+          <% end %>
+
+          <a href="/productos" class="btn btn-outline btn-full">Seguir comprando</a>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+  <script src="/js/main.js"></script>
+</body>
+</html>

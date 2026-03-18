@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body class="saas-body">
+  <div class="saas-form-page">
+    <div class="saas-form-top">
+      <div>
+        <span class="saas-eyebrow">Gestión de catálogo</span>
+        <h1><%= product ? 'Editar producto' : 'Nuevo producto' %></h1>
+      </div>
+      <div class="saas-top-actions">
+        <a href="/admin" class="saas-btn saas-btn-outline">Volver al dashboard</a>
+      </div>
+    </div>
+
+    <form
+      class="saas-product-form"
+      method="POST"
+      action="<%= product ? `/admin/productos/${product.id}?_method=PUT` : '/admin/productos' %>"
+      enctype="multipart/form-data"
+    >
+      <div class="saas-form-grid">
+        <section class="saas-card saas-form-section">
+          <h2>Información principal</h2>
+
+          <label>Nombre del producto</label>
+          <input type="text" name="name" required value="<%= product?.name || '' %>">
+
+          <label>Descripción</label>
+          <textarea name="description" rows="6" required><%= product?.description || '' %></textarea>
+
+          <label>Categoría</label>
+          <input type="text" name="category" required value="<%= product?.category || '' %>">
+
+          <label>Precio</label>
+          <input type="number" step="0.01" name="price" required value="<%= product?.price || '' %>">
+        </section>
+
+        <section class="saas-card saas-form-section">
+          <h2>Stock y visibilidad</h2>
+
+          <label>Stock disponible</label>
+          <input type="number" name="stock" min="0" required value="<%= product?.stock ?? 0 %>">
+
+          <label>Estado visual</label>
+          <select name="status" required>
+            <option value="in_stock" <%= product?.status === 'in_stock' ? 'selected' : '' %>>En stock</option>
+            <option value="sale" <%= product?.status === 'sale' ? 'selected' : '' %>>Sale</option>
+            <option value="sold_out" <%= product?.status === 'sold_out' ? 'selected' : '' %>>Agotado</option>
+          </select>
+
+          <label>Talles (separados por coma)</label>
+          <input type="text" name="sizes" value="<%= product?.sizes?.join(', ') || '' %>" placeholder="S, M, L">
+
+          <label>Colores (separados por coma)</label>
+          <input type="text" name="colors" value="<%= product?.colors?.join(', ') || '' %>" placeholder="Blanco, Negro">
+
+          <label class="saas-checkbox">
+            <input type="checkbox" name="featured" <%= product?.featured ? 'checked' : '' %>>
+            Mostrar como destacado en la home
+          </label>
+        </section>
+      </div>
+
+      <section class="saas-card saas-form-section">
+        <h2>Tabla de talles e imágenes</h2>
+
+        <label>Tabla de talles (HTML simple)</label>
+        <textarea name="size_chart_html" rows="8" placeholder="S: 50cm ancho / 70cm largo<br>M: 53cm ancho / 72cm largo"><%= product?.size_chart_html || '' %></textarea>
+
+        <label>Imágenes del producto (hasta 10)</label>
+        <input type="file" name="images" multiple accept=".jpg,.jpeg,.png,.webp">
+
+        <% if (product?.images?.length) { %>
+          <div class="saas-image-grid">
+            <% product.images.forEach(image => { %>
+              <img src="<%= image.image_url %>" alt="preview">
+            <% }) %>
+          </div>
+        <% } %>
+      </section>
+
+      <div class="saas-form-actions">
+        <button class="saas-btn saas-btn-primary" type="submit">
+          <%= product ? 'Guardar cambios' : 'Crear producto' %>
+        </button>
+        <a class="saas-btn saas-btn-outline" href="/admin">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

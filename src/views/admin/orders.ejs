@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body class="saas-body">
+  <div class="saas-form-page">
+    <div class="saas-form-top">
+      <div>
+        <span class="saas-eyebrow">Pedidos</span>
+        <h1>Gestión de pedidos</h1>
+        <p>Listado de pedidos registrados desde el carrito.</p>
+      </div>
+
+      <div class="saas-top-actions">
+        <a href="/admin" class="saas-btn saas-btn-outline">Volver al dashboard</a>
+      </div>
+    </div>
+
+    <section class="saas-card">
+      <% if (!orders.length) { %>
+        <div class="saas-empty">Todavía no hay pedidos registrados.</div>
+      <% } else { %>
+        <div class="saas-table-wrap">
+          <table class="saas-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Cliente</th>
+                <th>Teléfono</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% orders.forEach(order => { %>
+                <tr>
+                  <td>#<%= order.id %></td>
+                  <td><%= order.customer_name %></td>
+                  <td><%= order.customer_phone || '-' %></td>
+                  <td><%= formatCurrency(order.total) %></td>
+                  <td>
+                    <form method="POST" action="/admin/pedidos/<%= order.id %>/estado">
+                      <select name="status" onchange="this.form.submit()">
+                        <option value="pending" <%= order.status === 'pending' ? 'selected' : '' %>>Pendiente</option>
+                        <option value="confirmed" <%= order.status === 'confirmed' ? 'selected' : '' %>>Confirmado</option>
+                        <option value="completed" <%= order.status === 'completed' ? 'selected' : '' %>>Entregado</option>
+                        <option value="cancelled" <%= order.status === 'cancelled' ? 'selected' : '' %>>Cancelado</option>
+                      </select>
+                    </form>
+                  </td>
+                  <td><%= new Date(order.created_at).toLocaleString('es-AR') %></td>
+                  <td>
+                    <form method="POST" action="/admin/pedidos/<%= order.id %>/eliminar" onsubmit="return confirm('¿Eliminar pedido?')">
+                      <button class="saas-btn saas-btn-danger saas-btn-sm" type="submit">Eliminar</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+  </div>
+</body>
+</html>
