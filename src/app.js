@@ -65,13 +65,16 @@ app.use((req, res) => {
 });
 
 app.use((error, req, res, next) => {
-  console.error(error);
+  console.error('APP ERROR:', error);
+  console.error('STACK:', error?.stack);
 
   if (res.headersSent) {
     return next(error);
   }
 
-  res.status(500).send('Error interno del servidor');
+  res.status(500).send(process.env.NODE_ENV === 'production'
+    ? 'Error interno del servidor'
+    : `Error interno del servidor: ${error.message}`);
 });
 
 module.exports = app;

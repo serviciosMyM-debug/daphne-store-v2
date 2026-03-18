@@ -8,7 +8,7 @@ module.exports = session({
   store: new pgSession({
     pool,
     tableName: 'user_sessions',
-    createTableIfMissing: true
+    createTableIfMissing: false
   }),
   name: 'daphne.sid',
   secret: process.env.SESSION_SECRET || 'cambiar-esta-clave-en-produccion',
