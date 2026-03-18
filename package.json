@@ -6,20 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
-    "db:schema": "psql \"$DATABASE_URL\" -f db/schema.sql",
-    "db:seed": "psql \"$DATABASE_URL\" -f db/seed.sql"
+    "start": "node src/server.js"
   },
-  "keywords": [
-    "ecommerce",
-    "nodejs",
-    "express",
-    "postgresql",
-    "fashion",
-    "boutique"
-  ],
-  "author": "Servicios MyM",
-  "license": "MIT",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "compression": "^1.8.1",
@@ -27,12 +15,10 @@
     "dotenv": "^16.4.7",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
-    "express-ejs-layouts": "^2.5.1",
     "express-session": "^1.18.1",
     "method-override": "^3.0.0",
     "multer": "^1.4.5-lts.2",
     "pg": "^8.13.1",
-    "serverless-http": "^4.0.0",
     "slugify": "^1.6.6"
   },
   "devDependencies": {
