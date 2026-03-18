@@ -45,14 +45,14 @@
                 <div class="cart-item-side-v2">
                   <form method="POST" action="/carrito/actualizar" class="cart-update-form-v2">
                     <input type="hidden" name="index" value="<%= index %>">
-                    <label>Cantidad</label>
-                    <input type="number" name="quantity" min="1" value="<%= item.quantity %>">
+                    <label for="quantity-<%= index %>">Cantidad</label>
+                    <input id="quantity-<%= index %>" type="number" name="quantity" min="1" value="<%= item.quantity %>">
                     <button class="btn btn-outline" type="submit">Actualizar</button>
                   </form>
 
                   <div class="cart-item-total-v2">
                     <span>Total</span>
-                    <strong><%= formatCurrency(item.price * item.quantity) %></strong>
+                    <strong><%= formatCurrency(Number(item.price) * Number(item.quantity)) %></strong>
                   </div>
 
                   <form method="POST" action="/carrito/eliminar">
@@ -72,7 +72,9 @@
             <span>Subtotal</span>
             <strong>
               <%= formatCurrency(
-                (cart?.items || []).reduce((acc, item) => acc + (Number(item.price) * Number(item.quantity)), 0)
+                (cart && cart.items ? cart.items : []).reduce((acc, item) => {
+                  return acc + (Number(item.price) * Number(item.quantity));
+                }, 0)
               ) %>
             </strong>
           </div>
@@ -81,7 +83,9 @@
             <span>Total</span>
             <strong>
               <%= formatCurrency(
-                (cart?.items || []).reduce((acc, item) => acc + (Number(item.price) * Number(item.quantity)), 0)
+                (cart && cart.items ? cart.items : []).reduce((acc, item) => {
+                  return acc + (Number(item.price) * Number(item.quantity));
+                }, 0)
               ) %>
             </strong>
           </div>
@@ -101,7 +105,7 @@
                 Finalizar por WhatsApp
               </button>
             </form>
-          <% end %>
+          <% } %>
 
           <a href="/productos" class="btn btn-outline btn-full">Seguir comprando</a>
         </aside>

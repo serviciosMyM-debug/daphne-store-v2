@@ -287,13 +287,17 @@ router.post('/carrito/agregar', async (req, res, next) => {
   }
 });
 
-router.get('/carrito', (req, res) => {
-  const cart = req.session.cart || { items: [] };
+router.get('/carrito', (req, res, next) => {
+  try {
+    const cart = req.session.cart || { items: [] };
 
-  res.render('cart', {
-    title: 'Daphné | Carrito',
-    cart
-  });
+    res.render('cart', {
+      title: 'Daphné | Carrito',
+      cart
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.post('/carrito/actualizar', (req, res) => {
