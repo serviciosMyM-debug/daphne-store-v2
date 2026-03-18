@@ -7,8 +7,8 @@ const sessionMiddleware = require('./config/session');
 const publicRoutes = require('./routes/public');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
-const { formatCurrency } = require('./utils/format');
 const pool = require('./config/db');
+const utils = require('./utils/format');
 
 const app = express();
 
@@ -32,21 +32,26 @@ app.use(sessionMiddleware);
 
 app.use(async (req, res, next) => {
   try {
-    const settingsResult = await pool.query('SELECT * FROM settings WHERE id = 1 LIMIT 1');
-    const site = settingsResult.rows[0] || {};
-
-    const cart = req.session.cart || { items: [] };
-    const cartTotal = (cart.items || []).reduce(
-      (acc, item) => acc + Number(item.price || 0) * Number(item.quantity || 0),
-      0
+    const settingsResult = await pool.query(
+      'SELECT * FROM settings WHERE id = 1 LIMIT 1'
     );
+
+    const site = settingsResult.rows[0] || {};
+    const cart = req.session.cart || { items: [] };
+
+    const cartTotal = (cart.items || []).reduce((acc, item) => {
+      return acc + (Number(item.price || 0) * Number(item.quantity || 0));
+    }, 0);
 
     res.locals.site = site;
     res.locals.currentPath = req.path;
     res.locals.cart = cart;
     res.locals.cartTotal = cartTotal;
-    res.locals.formatCurrency = formatCurrency;
     res.locals.admin = req.session.admin || null;
+
+    res.locals.formatCurrency = utils.formatCurrency;
+    res.locals.makeSlug = utils.makeSlug;
+    res.locals.parseCSV = utils.parseCSV;
 
     next();
   } catch (error) {
@@ -72,9 +77,11 @@ app.use((error, req, res, next) => {
     return next(error);
   }
 
-  res.status(500).send(process.env.NODE_ENV === 'production'
-    ? 'Error interno del servidor'
-    : `Error interno del servidor: ${error.message}`);
+  res.status(500).send(
+    process.env.NODE_ENV === 'production'
+      ? 'Error interno del servidor'
+      : `Error interno del servidor: ${error.message}`
+  );
 });
 
 module.exports = app;

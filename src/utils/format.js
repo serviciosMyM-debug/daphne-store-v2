@@ -1,31 +1,35 @@
+function formatCurrency(value) {
+  const numericValue = Number(value || 0);
+
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    maximumFractionDigits: 0
+  }).format(numericValue);
+}
+
 function makeSlug(text) {
-  return text
-    .toString()
+  return String(text || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)+/g, '');
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
 }
 
-function parseCSV(value = '') {
-  return value
+function parseCSV(value) {
+  if (!value) return [];
+
+  return String(value)
     .split(',')
-    .map((v) => v.trim())
+    .map((item) => item.trim())
     .filter(Boolean);
 }
 
-function safeParseJSON(value, fallback = []) {
-  try {
-    return JSON.parse(value);
-  } catch {
-    return fallback;
-  }
-}
-
 module.exports = {
+  formatCurrency,
   makeSlug,
-  parseCSV,
-  safeParseJSON
+  parseCSV
 };
