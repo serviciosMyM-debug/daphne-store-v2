@@ -103,13 +103,13 @@
           <h2>Nuestros productos</h2>
         </div>
 
-        <% if (!featuredProducts.length) { %>
+        <% if (!catalogProducts.length) { %>
           <div class="empty-state">
             <h3>No hay productos para mostrar</h3>
           </div>
         <% } else { %>
           <div class="product-grid product-grid-v2">
-            <% featuredProducts.forEach(product => { %>
+            <% catalogProducts.forEach(product => { %>
               <article class="product-card-v2 catalog-card-v2">
                 <div class="product-image-wrap-v2">
                   <a href="/producto/<%= product.slug %>">

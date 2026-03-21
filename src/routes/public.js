@@ -43,7 +43,7 @@ async function getProductBySlug(slug) {
 
 router.get('/', async (req, res, next) => {
   try {
-    const [featured, reviews] = await Promise.all([
+    const [featured, catalog, reviews] = await Promise.all([
       pool.query(`
         SELECT
           p.*,
@@ -65,6 +65,25 @@ router.get('/', async (req, res, next) => {
         LIMIT 8
       `),
       pool.query(`
+        SELECT
+          p.*,
+          COALESCE(
+            (
+              SELECT image_url
+              FROM product_images pi
+              WHERE pi.product_id = p.id
+              ORDER BY sort_order, id
+              LIMIT 1
+            ),
+            '/images/hero-placeholder.jpg'
+          ) AS cover_image
+        FROM products p
+        WHERE p.status <> 'hidden'
+          AND COALESCE(p.stock, 0) > 0
+        ORDER BY p.created_at DESC
+        LIMIT 8
+      `),
+      pool.query(`
         SELECT *
         FROM reviews
         WHERE is_active = true
@@ -76,6 +95,7 @@ router.get('/', async (req, res, next) => {
     res.render('home', {
       title: 'Daphné | Inicio',
       featuredProducts: featured.rows,
+      catalogProducts: catalog.rows,
       reviews: reviews.rows
     });
   } catch (error) {
