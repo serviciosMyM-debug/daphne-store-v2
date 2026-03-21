@@ -25,6 +25,8 @@
 
     <section class="section section-products-v2">
       <div class="container cart-layout-v2">
+
+        <!-- LISTADO -->
         <div class="cart-list-v2">
           <% if (!cart || !cart.items || cart.items.length === 0) { %>
             <div class="products-empty-box">
@@ -33,8 +35,11 @@
               <a href="/productos" class="btn btn-outline">Ver productos</a>
             </div>
           <% } else { %>
+
             <% cart.items.forEach((item) => { %>
               <article class="cart-item-v2">
+
+                <!-- INFO -->
                 <div class="cart-item-info-v2">
                   <h3><%= item.name %></h3>
                   <p>Color: <strong><%= item.color_name || '-' %></strong></p>
@@ -42,36 +47,43 @@
                   <p>Precio unitario: <strong><%= formatCurrency(item.price) %></strong></p>
                 </div>
 
+                <!-- LADO DERECHO -->
                 <div class="cart-item-side-v2">
-                  <form method="POST" action="/carrito/actualizar" class="cart-update-form-v2">
-                    <input type="hidden" name="itemId" value="<%= item.id %>">
-                    <label for="quantity-<%= item.id %>">Cantidad</label>
-                    <input
-                      id="quantity-<%= item.id %>"
-                      type="number"
-                      name="quantity"
-                      min="1"
-                      max="<%= item.variant_stock || 1 %>"
-                      value="<%= item.quantity %>"
-                    >
-                    <button class="btn btn-outline" type="submit">Actualizar</button>
-                  </form>
 
-                  <div class="cart-item-total-v2">
-                    <span>Total</span>
-                    <strong><%= formatCurrency(Number(item.price) * Number(item.quantity)) %></strong>
+                  <!-- CANTIDAD SOLO VISUAL -->
+                  <div class="cart-update-form-v2">
+                    <label>Cantidad</label>
+                    <input
+                      type="number"
+                      value="<%= item.quantity %>"
+                      disabled
+                    >
                   </div>
 
+                  <!-- TOTAL -->
+                  <div class="cart-item-total-v2">
+                    <span>Total</span>
+                    <strong>
+                      <%= formatCurrency(Number(item.price) * Number(item.quantity)) %>
+                    </strong>
+                  </div>
+
+                  <!-- ELIMINAR -->
                   <form method="POST" action="/carrito/eliminar">
                     <input type="hidden" name="itemId" value="<%= item.id %>">
-                    <button class="btn btn-secondary" type="submit">Eliminar</button>
+                    <button class="btn btn-danger" type="submit">
+                      Eliminar
+                    </button>
                   </form>
+
                 </div>
               </article>
             <% }) %>
+
           <% } %>
         </div>
 
+        <!-- RESUMEN -->
         <aside class="cart-summary-v2">
           <h2>Resumen</h2>
 
@@ -114,8 +126,11 @@
             </form>
           <% } %>
 
-          <a href="/productos" class="btn btn-outline btn-full">Seguir comprando</a>
+          <a href="/productos" class="btn btn-outline btn-full">
+            Seguir comprando
+          </a>
         </aside>
+
       </div>
     </section>
   </main>

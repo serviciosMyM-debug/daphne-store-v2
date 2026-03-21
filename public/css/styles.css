@@ -2427,3 +2427,12 @@ a {
   color: var(--navy);
   font-weight: 600;
 }
+.btn-danger {
+  background: #e5484d;
+  color: #fff;
+  border: none;
+}
+
+.btn-danger:hover {
+  background: #c7373b;
+}
