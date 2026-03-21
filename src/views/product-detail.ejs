@@ -71,7 +71,7 @@
             <input type="hidden" name="productId" value="<%= product.id %>">
             <input type="hidden" name="variantId" id="variantIdInput" value="">
 
-            <% 
+            <%
               const availableColors = [...new Set((product.variants || []).map(v => v.color_name))];
               const availableSizes = [...new Set((product.variants || []).map(v => v.size_name))];
             %>
@@ -119,7 +119,7 @@
 
             <div class="form-row-v2">
               <label for="quantity">Cantidad</label>
-              <input id="quantity" type="number" name="quantity" min="1" max="10" value="1">
+              <input id="quantity" type="number" name="quantity" min="1" value="1" required>
             </div>
 
             <div class="product-detail-actions-v2">
@@ -155,5 +155,167 @@
 
   <%- include('partials/footer') %>
   <script src="/js/main.js"></script>
+
+  <script>
+    (function () {
+      const variants = Array.isArray(window.productVariants) ? window.productVariants : [];
+      const form = document.getElementById('productBuyForm');
+      const colorButtons = Array.from(document.querySelectorAll('.selector-pill-color'));
+      const sizeButtons = Array.from(document.querySelectorAll('.selector-pill-size'));
+      const variantInput = document.getElementById('variantIdInput');
+      const selectedVariantBox = document.getElementById('selectedVariantBox');
+      const quantityInput = document.getElementById('quantity');
+      const addToCartBtn = document.getElementById('addToCartBtn');
+
+      let selectedColor = colorButtons.find(btn => btn.classList.contains('active'))?.dataset.color || null;
+      let selectedSize = sizeButtons.find(btn => btn.classList.contains('active'))?.dataset.size || null;
+
+      function findVariant() {
+        return variants.find((variant) => {
+          return variant.color_name === selectedColor && variant.size_name === selectedSize;
+        });
+      }
+
+      function setActiveButton(buttons, activeValue, key) {
+        buttons.forEach((btn) => {
+          const isActive = btn.dataset[key] === activeValue;
+          btn.classList.toggle('active', isActive);
+        });
+      }
+
+      function refreshVariantState() {
+        const variant = findVariant();
+
+        if (!variant) {
+          variantInput.value = '';
+          selectedVariantBox.textContent = 'Combinación no disponible';
+          quantityInput.value = 1;
+          quantityInput.min = 1;
+          quantityInput.max = 1;
+          quantityInput.disabled = true;
+          addToCartBtn.disabled = true;
+          addToCartBtn.textContent = 'Variante no disponible';
+          addToCartBtn.style.opacity = '0.6';
+          addToCartBtn.style.cursor = 'not-allowed';
+          return;
+        }
+
+        variantInput.value = variant.id;
+
+        const stock = Number(variant.stock || 0);
+
+        if (stock <= 0) {
+          selectedVariantBox.textContent = `${variant.color_name} · ${variant.size_name} · Sin stock`;
+          quantityInput.value = 1;
+          quantityInput.min = 1;
+          quantityInput.max = 1;
+          quantityInput.disabled = true;
+          addToCartBtn.disabled = true;
+          addToCartBtn.textContent = 'Sin stock';
+          addToCartBtn.style.opacity = '0.6';
+          addToCartBtn.style.cursor = 'not-allowed';
+          return;
+        }
+
+        selectedVariantBox.textContent = `${variant.color_name} · ${variant.size_name} · Stock: ${stock}`;
+
+        quantityInput.disabled = false;
+        quantityInput.min = 1;
+        quantityInput.max = stock;
+
+        let currentQty = Number(quantityInput.value || 1);
+        if (!Number.isInteger(currentQty) || currentQty < 1) currentQty = 1;
+        if (currentQty > stock) currentQty = stock;
+        quantityInput.value = currentQty;
+
+        addToCartBtn.disabled = false;
+        addToCartBtn.textContent = 'Agregar al carrito';
+        addToCartBtn.style.opacity = '1';
+        addToCartBtn.style.cursor = 'pointer';
+      }
+
+      colorButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          selectedColor = btn.dataset.color;
+          setActiveButton(colorButtons, selectedColor, 'color');
+          refreshVariantState();
+        });
+      });
+
+      sizeButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          selectedSize = btn.dataset.size;
+          setActiveButton(sizeButtons, selectedSize, 'size');
+          refreshVariantState();
+        });
+      });
+
+      quantityInput.addEventListener('input', () => {
+        const variant = findVariant();
+        if (!variant) return;
+
+        const stock = Number(variant.stock || 0);
+        let value = Number(quantityInput.value || 1);
+
+        if (!Number.isInteger(value) || value < 1) {
+          value = 1;
+        }
+
+        if (value > stock) {
+          value = stock;
+        }
+
+        quantityInput.value = value;
+      });
+
+      form.addEventListener('submit', (event) => {
+        const variant = findVariant();
+
+        if (!variant) {
+          event.preventDefault();
+          selectedVariantBox.textContent = 'Seleccioná una variante válida';
+          return;
+        }
+
+        const stock = Number(variant.stock || 0);
+        const qty = Number(quantityInput.value || 1);
+
+        if (!Number.isInteger(qty) || qty < 1) {
+          event.preventDefault();
+          quantityInput.value = 1;
+          return;
+        }
+
+        if (stock <= 0) {
+          event.preventDefault();
+          selectedVariantBox.textContent = `${variant.color_name} · ${variant.size_name} · Sin stock`;
+          return;
+        }
+
+        if (qty > stock) {
+          event.preventDefault();
+          quantityInput.value = stock;
+          selectedVariantBox.textContent = `${variant.color_name} · ${variant.size_name} · Stock máximo: ${stock}`;
+          return;
+        }
+
+        variantInput.value = variant.id;
+      });
+
+      refreshVariantState();
+
+      const thumbButtons = Array.from(document.querySelectorAll('.thumb-btn-v2'));
+      const mainImage = document.getElementById('mainProductImage');
+
+      thumbButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const newImage = button.dataset.image;
+          if (newImage && mainImage) {
+            mainImage.src = newImage;
+          }
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

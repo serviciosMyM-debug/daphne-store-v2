@@ -256,25 +256,56 @@ router.post('/carrito/agregar', async (req, res, next) => {
   try {
     const productId = Number(req.body.productId);
     const variantId = Number(req.body.variantId);
-    const qty = Math.max(1, Number(req.body.quantity || 1));
+    const qty = Number(req.body.quantity);
 
-    if (!productId || !variantId) {
+    if (!Number.isInteger(productId) || productId <= 0) {
       return res.redirect('/productos');
     }
 
-    const variantResult = await pool.query(
-      'SELECT * FROM product_variants WHERE id = $1 AND product_id = $2 LIMIT 1',
-      [variantId, productId]
-    );
-
-    const variant = variantResult.rows[0];
-
-    if (!variant || variant.stock < qty) {
+    if (!Number.isInteger(variantId) || variantId <= 0) {
       const productResult = await pool.query(
         'SELECT slug FROM products WHERE id = $1 LIMIT 1',
         [productId]
       );
       const product = productResult.rows[0];
+      return res.redirect(product ? `/producto/${product.slug}` : '/productos');
+    }
+
+    if (!Number.isInteger(qty) || qty <= 0) {
+      const productResult = await pool.query(
+        'SELECT slug FROM products WHERE id = $1 LIMIT 1',
+        [productId]
+      );
+      const product = productResult.rows[0];
+      return res.redirect(product ? `/producto/${product.slug}` : '/productos');
+    }
+
+    const variantResult = await pool.query(
+      `SELECT *
+       FROM product_variants
+       WHERE id = $1 AND product_id = $2
+       LIMIT 1`,
+      [variantId, productId]
+    );
+
+    const variant = variantResult.rows[0];
+
+    const productResult = await pool.query(
+      'SELECT slug FROM products WHERE id = $1 LIMIT 1',
+      [productId]
+    );
+    const product = productResult.rows[0];
+
+    if (!variant) {
+      return res.redirect(product ? `/producto/${product.slug}` : '/productos');
+    }
+
+    const existing = await cartService.getItemByVariant(req.sessionID, variantId);
+    const existingQty = existing ? Number(existing.quantity || 0) : 0;
+    const requestedTotal = existingQty + qty;
+    const availableStock = Number(variant.stock || 0);
+
+    if (requestedTotal > availableStock) {
       return res.redirect(product ? `/producto/${product.slug}` : '/productos');
     }
 
@@ -302,7 +333,15 @@ router.get('/carrito', async (req, res, next) => {
 router.post('/carrito/actualizar', async (req, res, next) => {
   try {
     const itemId = Number(req.body.itemId);
-    const quantity = Math.max(1, Number(req.body.quantity || 1));
+    const quantity = Number(req.body.quantity);
+
+    if (!Number.isInteger(itemId) || itemId <= 0) {
+      return res.redirect('/carrito');
+    }
+
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      return res.redirect('/carrito');
+    }
 
     const items = await cartService.getItems(req.sessionID);
     const item = items.find((row) => Number(row.id) === itemId);

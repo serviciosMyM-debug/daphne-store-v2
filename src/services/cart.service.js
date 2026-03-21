@@ -41,11 +41,26 @@ async function getItems(sessionID) {
   return result.rows;
 }
 
+async function getItemByVariant(sessionID, variantId) {
+  const cart = await getCart(sessionID);
+
+  const result = await pool.query(
+    `SELECT *
+     FROM cart_items
+     WHERE cart_id = $1 AND variant_id = $2
+     LIMIT 1`,
+    [cart.id, variantId]
+  );
+
+  return result.rows[0] || null;
+}
+
 async function addItem(sessionID, productId, variantId, qty) {
   const cart = await getCart(sessionID);
 
   const existing = await pool.query(
-    `SELECT * FROM cart_items
+    `SELECT *
+     FROM cart_items
      WHERE cart_id = $1 AND variant_id = $2`,
     [cart.id, variantId]
   );
@@ -99,6 +114,7 @@ async function clearCart(sessionID) {
 
 module.exports = {
   getItems,
+  getItemByVariant,
   addItem,
   updateItemQuantity,
   removeItem,
