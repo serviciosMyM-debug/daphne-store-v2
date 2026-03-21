@@ -16,24 +16,49 @@
 
   <main>
     <section class="hero-v2" id="heroV2">
-  <div class="hero-v2-bg"></div>
-  <div class="hero-v2-topfade"></div>
-  <div class="hero-v2-overlay"></div>
+      <div class="hero-v2-bg"></div>
+      <div class="hero-v2-topfade"></div>
+      <div class="hero-v2-overlay"></div>
 
-  <div class="container hero-v2-content">
-    <div class="hero-v2-center">
-      <img src="/images/daphne-logo.png" alt="Daphné" class="hero-v2-logo">
+      <div class="container hero-v2-content">
+        <div class="hero-v2-center">
+          <img src="/images/daphne-logo.png" alt="Daphné" class="hero-v2-logo">
 
-      <h1 class="hero-v2-title"><%= site?.hero_title || 'Tu outfit es una extensión de ti' %></h1>
-      <p class="hero-v2-subtitle"><%= site?.hero_subtitle || 'Reflejando identidad, estilo y presencia' %></p>
+          <h1 class="hero-v2-title"><%= site?.hero_title || 'Tu outfit es una extensión de ti' %></h1>
+          <p class="hero-v2-subtitle"><%= site?.hero_subtitle || 'Reflejando identidad, estilo y presencia' %></p>
 
-      <div class="hero-v2-actions">
-        <a href="/productos" class="btn btn-primary">Ver productos</a>
-        <a href="/#destacados" class="btn btn-secondary">Ver destacados</a>
+          <div class="hero-v2-actions">
+            <a href="/productos" class="btn btn-primary">Ver productos</a>
+            <a href="/#destacados" class="btn btn-secondary">Ver destacados</a>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</section>
+    </section>
+
+    <section class="section section-white">
+      <div class="container">
+        <div class="section-head section-head-centered">
+          <span class="eyebrow">Opiniones</span>
+          <h2>Clientes que confían en Daphné</h2>
+        </div>
+
+        <% if (!reviews.length) { %>
+          <div class="empty-state">
+            <h3>No hay opiniones cargadas todavía</h3>
+          </div>
+        <% } else { %>
+          <div class="reviews-grid reviews-grid-v2">
+            <% reviews.forEach(review => { %>
+              <article class="review-card review-card-v2">
+                <div class="stars"><%= '★'.repeat(review.stars) %><%= '☆'.repeat(5 - review.stars) %></div>
+                <p>“<%= review.comment %>”</p>
+                <strong><%= review.customer_name %></strong>
+              </article>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </section>
 
     <section id="destacados" class="section section-white">
       <div class="container">
@@ -97,31 +122,6 @@
                   <p class="price"><%= formatCurrency(product.price) %></p>
                   <a href="/producto/<%= product.slug %>" class="btn btn-outline">Ver detalle</a>
                 </div>
-              </article>
-            <% }) %>
-          </div>
-        <% } %>
-      </div>
-    </section>
-
-    <section class="section section-white">
-      <div class="container">
-        <div class="section-head section-head-centered">
-          <span class="eyebrow">Opiniones</span>
-          <h2>Clientes que confían en Daphné</h2>
-        </div>
-
-        <% if (!reviews.length) { %>
-          <div class="empty-state">
-            <h3>No hay opiniones cargadas todavía</h3>
-          </div>
-        <% } else { %>
-          <div class="reviews-grid reviews-grid-v2">
-            <% reviews.forEach(review => { %>
-              <article class="review-card review-card-v2">
-                <div class="stars"><%= '★'.repeat(review.stars) %><%= '☆'.repeat(5 - review.stars) %></div>
-                <p>“<%= review.comment %>”</p>
-                <strong><%= review.customer_name %></strong>
               </article>
             <% }) %>
           </div>

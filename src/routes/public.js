@@ -60,6 +60,7 @@ router.get('/', async (req, res, next) => {
         FROM products p
         WHERE p.featured = true
           AND p.status <> 'hidden'
+          AND COALESCE(p.stock, 0) > 0
         ORDER BY p.created_at DESC
         LIMIT 8
       `),
