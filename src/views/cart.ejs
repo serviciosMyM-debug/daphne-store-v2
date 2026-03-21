@@ -33,20 +33,27 @@
               <a href="/productos" class="btn btn-outline">Ver productos</a>
             </div>
           <% } else { %>
-            <% cart.items.forEach((item, index) => { %>
+            <% cart.items.forEach((item) => { %>
               <article class="cart-item-v2">
                 <div class="cart-item-info-v2">
                   <h3><%= item.name %></h3>
-                  <p>Color: <strong><%= item.color || '-' %></strong></p>
-                  <p>Talle: <strong><%= item.size || '-' %></strong></p>
+                  <p>Color: <strong><%= item.color_name || '-' %></strong></p>
+                  <p>Talle: <strong><%= item.size_name || '-' %></strong></p>
                   <p>Precio unitario: <strong><%= formatCurrency(item.price) %></strong></p>
                 </div>
 
                 <div class="cart-item-side-v2">
                   <form method="POST" action="/carrito/actualizar" class="cart-update-form-v2">
                     <input type="hidden" name="itemId" value="<%= item.id %>">
-                    <label for="quantity-<%= index %>">Cantidad</label>
-                    <input id="quantity-<%= index %>" type="number" name="quantity" min="1" value="<%= item.quantity %>">
+                    <label for="quantity-<%= item.id %>">Cantidad</label>
+                    <input
+                      id="quantity-<%= item.id %>"
+                      type="number"
+                      name="quantity"
+                      min="1"
+                      max="<%= item.variant_stock || 1 %>"
+                      value="<%= item.quantity %>"
+                    >
                     <button class="btn btn-outline" type="submit">Actualizar</button>
                   </form>
 

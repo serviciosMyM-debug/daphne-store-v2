@@ -76,30 +76,126 @@ router.get('/', async (req, res, next) => {
 
 router.get('/productos', async (req, res, next) => {
   try {
-    const result = await pool.query(`
-      SELECT
-        p.*,
-        COALESCE(
-          (
-            SELECT image_url
-            FROM product_images pi
-            WHERE pi.product_id = p.id
-            ORDER BY pi.sort_order, pi.id
-            LIMIT 1
-          ),
-          '/images/hero-placeholder.jpg'
-        ) AS cover_image
-      FROM products p
-      ORDER BY p.featured DESC, p.created_at DESC
-    `);
+    const q = (req.query.q || '').trim();
+    const color = (req.query.color || '').trim();
+    const size = (req.query.size || '').trim();
+    const category = (req.query.category || '').trim();
+    const status = (req.query.status || '').trim();
+
+    const conditions = [];
+    const values = [];
+    let index = 1;
+
+    if (q) {
+      conditions.push(`(
+        p.name ILIKE $${index}
+        OR p.category ILIKE $${index}
+        OR p.description ILIKE $${index}
+        OR EXISTS (
+          SELECT 1
+          FROM product_colors pc
+          WHERE pc.product_id = p.id
+          AND pc.color_name ILIKE $${index}
+        )
+        OR EXISTS (
+          SELECT 1
+          FROM product_sizes ps
+          WHERE ps.product_id = p.id
+          AND ps.size_name ILIKE $${index}
+        )
+      )`);
+      values.push(`%${q}%`);
+      index++;
+    }
+
+    if (color) {
+      conditions.push(`
+        EXISTS (
+          SELECT 1
+          FROM product_colors pc
+          WHERE pc.product_id = p.id
+          AND pc.color_name = $${index}
+        )
+      `);
+      values.push(color);
+      index++;
+    }
+
+    if (size) {
+      conditions.push(`
+        EXISTS (
+          SELECT 1
+          FROM product_sizes ps
+          WHERE ps.product_id = p.id
+          AND ps.size_name = $${index}
+        )
+      `);
+      values.push(size);
+      index++;
+    }
+
+    if (category) {
+      conditions.push(`p.category = $${index}`);
+      values.push(category);
+      index++;
+    }
+
+    if (status) {
+      conditions.push(`p.status = $${index}`);
+      values.push(status);
+      index++;
+    }
+
+    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const [productsResult, categoriesResult, colorsResult, sizesResult] = await Promise.all([
+      pool.query(`
+        SELECT
+          p.*,
+          COALESCE(
+            (
+              SELECT image_url
+              FROM product_images pi
+              WHERE pi.product_id = p.id
+              ORDER BY pi.sort_order, pi.id
+              LIMIT 1
+            ),
+            '/images/hero-placeholder.jpg'
+          ) AS cover_image
+        FROM products p
+        ${whereClause}
+        ORDER BY p.featured DESC, p.created_at DESC, p.name ASC
+      `, values),
+
+      pool.query(`
+        SELECT DISTINCT category
+        FROM products
+        WHERE category IS NOT NULL AND category <> ''
+        ORDER BY category
+      `),
+
+      pool.query(`
+        SELECT DISTINCT color_name
+        FROM product_colors
+        WHERE color_name IS NOT NULL AND color_name <> ''
+        ORDER BY color_name
+      `),
+
+      pool.query(`
+        SELECT DISTINCT size_name
+        FROM product_sizes
+        WHERE size_name IS NOT NULL AND size_name <> ''
+        ORDER BY size_name
+      `)
+    ]);
 
     res.render('products', {
       title: 'Daphné | Productos',
-      products: result.rows,
-      filters: {},
-      categories: [],
-      colors: [],
-      sizes: []
+      products: productsResult.rows,
+      filters: { q, color, size, category, status },
+      categories: categoriesResult.rows.map((r) => r.category),
+      colors: colorsResult.rows.map((r) => r.color_name),
+      sizes: sizesResult.rows.map((r) => r.size_name)
     });
   } catch (error) {
     next(error);
@@ -129,15 +225,24 @@ router.post('/carrito/agregar', async (req, res, next) => {
     const variantId = Number(req.body.variantId);
     const qty = Math.max(1, Number(req.body.quantity || 1));
 
+    if (!productId || !variantId) {
+      return res.redirect('/productos');
+    }
+
     const variantResult = await pool.query(
-      'SELECT * FROM product_variants WHERE id = $1',
-      [variantId]
+      'SELECT * FROM product_variants WHERE id = $1 AND product_id = $2 LIMIT 1',
+      [variantId, productId]
     );
 
     const variant = variantResult.rows[0];
 
     if (!variant || variant.stock < qty) {
-      return res.redirect('/productos');
+      const productResult = await pool.query(
+        'SELECT slug FROM products WHERE id = $1 LIMIT 1',
+        [productId]
+      );
+      const product = productResult.rows[0];
+      return res.redirect(product ? `/producto/${product.slug}` : '/productos');
     }
 
     await cartService.addItem(req.sessionID, productId, variantId, qty);
@@ -161,10 +266,42 @@ router.get('/carrito', async (req, res, next) => {
   }
 });
 
-router.post('/carrito/eliminar', async (req, res) => {
-  const { itemId } = req.body;
-  await cartService.removeItem(req.sessionID, itemId);
-  res.redirect('/carrito');
+router.post('/carrito/actualizar', async (req, res, next) => {
+  try {
+    const itemId = Number(req.body.itemId);
+    const quantity = Math.max(1, Number(req.body.quantity || 1));
+
+    const items = await cartService.getItems(req.sessionID);
+    const item = items.find((row) => Number(row.id) === itemId);
+
+    if (!item) {
+      return res.redirect('/carrito');
+    }
+
+    if (quantity > Number(item.variant_stock || 0)) {
+      return res.redirect('/carrito');
+    }
+
+    await cartService.updateItemQuantity(req.sessionID, itemId, quantity);
+
+    res.redirect('/carrito');
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/carrito/eliminar', async (req, res, next) => {
+  try {
+    const itemId = Number(req.body.itemId);
+
+    if (itemId) {
+      await cartService.removeItem(req.sessionID, itemId);
+    }
+
+    res.redirect('/carrito');
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.post('/carrito/finalizar-whatsapp', async (req, res, next) => {
@@ -179,20 +316,22 @@ router.post('/carrito/finalizar-whatsapp', async (req, res, next) => {
     const customerPhone = (req.body.customer_phone || '').trim();
     const notes = (req.body.notes || '').trim();
 
+    if (!customerName) {
+      return res.redirect('/carrito');
+    }
+
     await client.query('BEGIN');
 
     for (const item of items) {
       const variantResult = await client.query(
-        `SELECT * FROM product_variants WHERE id = (
-          SELECT variant_id FROM cart_items WHERE id = $1
-        )`,
-        [item.id]
+        'SELECT * FROM product_variants WHERE id = $1 LIMIT 1',
+        [item.variant_id]
       );
 
       const variant = variantResult.rows[0];
 
-      if (!variant || variant.stock < item.quantity) {
-        throw new Error('Stock insuficiente');
+      if (!variant || Number(variant.stock) < Number(item.quantity)) {
+        throw new Error(`Stock insuficiente para ${item.name}`);
       }
     }
 
@@ -212,10 +351,8 @@ router.post('/carrito/finalizar-whatsapp', async (req, res, next) => {
 
     for (const item of items) {
       const variantResult = await client.query(
-        `SELECT * FROM product_variants WHERE id = (
-          SELECT variant_id FROM cart_items WHERE id = $1
-        )`,
-        [item.id]
+        'SELECT * FROM product_variants WHERE id = $1 LIMIT 1',
+        [item.variant_id]
       );
 
       const variant = variantResult.rows[0];
@@ -226,11 +363,11 @@ router.post('/carrito/finalizar-whatsapp', async (req, res, next) => {
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
         [
           order.id,
-          variant.product_id,
-          variant.id,
+          item.product_id,
+          item.variant_id,
           item.name,
-          variant.color_name,
-          variant.size_name,
+          item.color_name || null,
+          item.size_name || null,
           item.quantity,
           item.price,
           Number(item.price) * Number(item.quantity)
@@ -241,28 +378,45 @@ router.post('/carrito/finalizar-whatsapp', async (req, res, next) => {
         `UPDATE product_variants
          SET stock = stock - $1
          WHERE id = $2`,
-        [item.quantity, variant.id]
+        [item.quantity, item.variant_id]
       );
 
-      await updateProductStock(variant.product_id);
+      await updateProductStock(item.product_id);
     }
 
     await client.query('COMMIT');
 
-    await pool.query(
-      `DELETE FROM cart_items WHERE cart_id = (
-        SELECT id FROM carts WHERE session_id = $1
-      )`,
-      [req.sessionID]
-    );
+    await cartService.clearCart(req.sessionID);
 
-    const message = `Pedido #${order.id} - ${customerName}`;
+    const message = [
+      `Hola, quiero finalizar mi compra en Daphné.`,
+      ``,
+      `Pedido #${order.id}`,
+      `Cliente: ${customerName}`,
+      customerPhone ? `Teléfono: ${customerPhone}` : null,
+      ``,
+      ...items.map(
+        (item) =>
+          `- ${item.name} | ${item.color_name || '-'} | ${item.size_name || '-'} | Cant: ${item.quantity} | ${new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            maximumFractionDigits: 0
+          }).format(Number(item.price) * Number(item.quantity))}`
+      ),
+      ``,
+      `Total: ${new Intl.NumberFormat('es-AR', {
+        style: 'currency',
+        currency: 'ARS',
+        maximumFractionDigits: 0
+      }).format(total)}`,
+      notes ? `` : null,
+      notes ? `Observaciones: ${notes}` : null
+    ].filter(Boolean).join('\n');
 
     const whatsapp = res.locals.site?.whatsapp || process.env.WHATSAPP_NUMBER || '';
     const waUrl = `https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`;
 
     res.redirect(waUrl);
-
   } catch (error) {
     await client.query('ROLLBACK');
     console.error(error);
@@ -272,15 +426,25 @@ router.post('/carrito/finalizar-whatsapp', async (req, res, next) => {
   }
 });
 
-router.get('/carrito/vaciar', async (req, res) => {
-  await pool.query(
-    `DELETE FROM cart_items WHERE cart_id = (
-      SELECT id FROM carts WHERE session_id = $1
-    )`,
-    [req.sessionID]
-  );
+router.get('/carrito/vaciar', async (req, res, next) => {
+  try {
+    await cartService.clearCart(req.sessionID);
+    res.redirect('/carrito');
+  } catch (error) {
+    next(error);
+  }
+});
 
-  res.redirect('/carrito');
+router.get('/contacto', (req, res) => {
+  res.render('contact', {
+    title: 'Daphné | Contacto'
+  });
+});
+
+router.get('/envios', (req, res) => {
+  res.render('shipping', {
+    title: 'Daphné | Envíos'
+  });
 });
 
 module.exports = router;
