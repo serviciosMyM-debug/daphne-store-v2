@@ -45,23 +45,31 @@ router.get('/', async (req, res, next) => {
   try {
     const [featured, reviews] = await Promise.all([
       pool.query(`
-        SELECT p.*,
-        COALESCE(
-          (
-            SELECT image_url
-            FROM product_images pi
-            WHERE pi.product_id = p.id
-            ORDER BY sort_order, id
-            LIMIT 1
-          ),
-          '/images/hero-placeholder.jpg'
-        ) AS cover_image
+        SELECT
+          p.*,
+          COALESCE(
+            (
+              SELECT image_url
+              FROM product_images pi
+              WHERE pi.product_id = p.id
+              ORDER BY sort_order, id
+              LIMIT 1
+            ),
+            '/images/hero-placeholder.jpg'
+          ) AS cover_image
         FROM products p
-        WHERE featured = true
+        WHERE p.featured = true
+          AND p.status <> 'hidden'
         ORDER BY p.created_at DESC
         LIMIT 8
       `),
-      pool.query('SELECT * FROM reviews WHERE is_active = true ORDER BY created_at DESC LIMIT 6')
+      pool.query(`
+        SELECT *
+        FROM reviews
+        WHERE is_active = true
+        ORDER BY created_at DESC
+        LIMIT 6
+      `)
     ]);
 
     res.render('home', {
@@ -82,7 +90,7 @@ router.get('/productos', async (req, res, next) => {
     const category = (req.query.category || '').trim();
     const status = (req.query.status || '').trim();
 
-    const conditions = [];
+    const conditions = [`p.status <> 'hidden'`];
     const values = [];
     let index = 1;
 
@@ -95,13 +103,13 @@ router.get('/productos', async (req, res, next) => {
           SELECT 1
           FROM product_colors pc
           WHERE pc.product_id = p.id
-          AND pc.color_name ILIKE $${index}
+            AND pc.color_name ILIKE $${index}
         )
         OR EXISTS (
           SELECT 1
           FROM product_sizes ps
           WHERE ps.product_id = p.id
-          AND ps.size_name ILIKE $${index}
+            AND ps.size_name ILIKE $${index}
         )
       )`);
       values.push(`%${q}%`);
@@ -114,7 +122,7 @@ router.get('/productos', async (req, res, next) => {
           SELECT 1
           FROM product_colors pc
           WHERE pc.product_id = p.id
-          AND pc.color_name = $${index}
+            AND pc.color_name = $${index}
         )
       `);
       values.push(color);
@@ -127,7 +135,7 @@ router.get('/productos', async (req, res, next) => {
           SELECT 1
           FROM product_sizes ps
           WHERE ps.product_id = p.id
-          AND ps.size_name = $${index}
+            AND ps.size_name = $${index}
         )
       `);
       values.push(size);
@@ -146,7 +154,7 @@ router.get('/productos', async (req, res, next) => {
       index++;
     }
 
-    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const whereClause = `WHERE ${conditions.join(' AND ')}`;
 
     const [productsResult, categoriesResult, colorsResult, sizesResult] = await Promise.all([
       pool.query(`
@@ -170,21 +178,25 @@ router.get('/productos', async (req, res, next) => {
       pool.query(`
         SELECT DISTINCT category
         FROM products
-        WHERE category IS NOT NULL AND category <> ''
+        WHERE category IS NOT NULL
+          AND category <> ''
+          AND status <> 'hidden'
         ORDER BY category
       `),
 
       pool.query(`
         SELECT DISTINCT color_name
         FROM product_colors
-        WHERE color_name IS NOT NULL AND color_name <> ''
+        WHERE color_name IS NOT NULL
+          AND color_name <> ''
         ORDER BY color_name
       `),
 
       pool.query(`
         SELECT DISTINCT size_name
         FROM product_sizes
-        WHERE size_name IS NOT NULL AND size_name <> ''
+        WHERE size_name IS NOT NULL
+          AND size_name <> ''
         ORDER BY size_name
       `)
     ]);
@@ -206,7 +218,7 @@ router.get('/producto/:slug', async (req, res, next) => {
   try {
     const product = await getProductBySlug(req.params.slug);
 
-    if (!product) {
+    if (!product || product.status === 'hidden') {
       return res.status(404).render('404', { title: 'Producto no encontrado' });
     }
 
@@ -350,13 +362,6 @@ router.post('/carrito/finalizar-whatsapp', async (req, res, next) => {
     const order = orderResult.rows[0];
 
     for (const item of items) {
-      const variantResult = await client.query(
-        'SELECT * FROM product_variants WHERE id = $1 LIMIT 1',
-        [item.variant_id]
-      );
-
-      const variant = variantResult.rows[0];
-
       await client.query(
         `INSERT INTO order_items
          (order_id, product_id, variant_id, product_name, color_name, size_name, quantity, unit_price, line_total)
