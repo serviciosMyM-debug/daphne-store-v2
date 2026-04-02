@@ -1,71 +1,67 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const pool = require('../config/db');
-const upload = require('../middleware/upload');
 const { requireAdmin } = require('../middleware/auth');
 const { makeSlug, parseCSV } = require('../utils/format');
-const updateProductStock = require('../utils/updateProductStock');
 
 const router = express.Router();
 
-function parseVariantsText(text) {
-  return String(text || '')
+function parseImageLines(value) {
+  return String(value || '')
     .split('\n')
     .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [colorNameRaw, sizeNameRaw, stockRaw] = line.split('|').map((v) => String(v || '').trim());
-
-      return {
-        color_name: colorNameRaw,
-        size_name: sizeNameRaw,
-        stock: Math.max(0, Number(stockRaw || 0))
-      };
-    })
-    .filter((item) => item.color_name && item.size_name);
+    .filter(Boolean);
 }
 
-async function replaceProductRelationsAndVariants(productId, variants, imagePaths) {
+function getStockImages() {
+  try {
+    const stockDir = path.join(process.cwd(), 'public', 'stock');
+
+    if (!fs.existsSync(stockDir)) {
+      return [];
+    }
+
+    const files = fs.readdirSync(stockDir);
+
+    return files
+      .filter((file) => /\.(jpg|jpeg|png|webp|gif)$/i.test(file))
+      .sort((a, b) => a.localeCompare(b, 'es'))
+      .map((file) => ({
+        file,
+        url: `/stock/${file}`
+      }));
+  } catch (error) {
+    console.error('Error leyendo public/stock:', error);
+    return [];
+  }
+}
+
+async function upsertRelations(productId, sizes, colors, imagePaths) {
   await pool.query('DELETE FROM product_sizes WHERE product_id = $1', [productId]);
   await pool.query('DELETE FROM product_colors WHERE product_id = $1', [productId]);
-  await pool.query('DELETE FROM product_variants WHERE product_id = $1', [productId]);
+  await pool.query('DELETE FROM product_images WHERE product_id = $1', [productId]);
 
-  const uniqueSizes = [...new Set(variants.map((v) => v.size_name))];
-  const uniqueColors = [...new Set(variants.map((v) => v.color_name))];
-
-  for (const size of uniqueSizes) {
+  for (const size of sizes) {
     await pool.query(
       'INSERT INTO product_sizes (product_id, size_name) VALUES ($1, $2)',
       [productId, size]
     );
   }
 
-  for (const color of uniqueColors) {
+  for (const color of colors) {
     await pool.query(
       'INSERT INTO product_colors (product_id, color_name) VALUES ($1, $2)',
       [productId, color]
     );
   }
 
-  for (const variant of variants) {
+  for (let i = 0; i < imagePaths.length; i++) {
     await pool.query(
-      `INSERT INTO product_variants (product_id, color_name, size_name, stock)
-       VALUES ($1, $2, $3, $4)`,
-      [productId, variant.color_name, variant.size_name, variant.stock]
+      'INSERT INTO product_images (product_id, image_url, alt_text, sort_order) VALUES ($1, $2, $3, $4)',
+      [productId, imagePaths[i], null, i + 1]
     );
   }
-
-  if (imagePaths.length) {
-    await pool.query('DELETE FROM product_images WHERE product_id = $1', [productId]);
-
-    for (let i = 0; i < imagePaths.length; i++) {
-      await pool.query(
-        'INSERT INTO product_images (product_id, image_url, alt_text, sort_order) VALUES ($1, $2, $3, $4)',
-        [productId, imagePaths[i], null, i + 1]
-      );
-    }
-  }
-
-  await updateProductStock(productId);
 }
 
 router.get('/', requireAdmin, async (req, res, next) => {
@@ -158,39 +154,29 @@ router.get('/', requireAdmin, async (req, res, next) => {
 router.get('/productos/nuevo', requireAdmin, (req, res) => {
   res.render('admin/product-form', {
     title: 'Admin | Nuevo producto',
-    product: {
-      name: '',
-      description: '',
-      price: '',
-      category: '',
-      stock: 0,
-      status: 'in_stock',
-      size_chart_html: '',
-      featured: false,
-      images: [],
-      variantsText: ''
-    }
+    product: null,
+    stockImages: getStockImages()
   });
 });
 
-router.post('/productos', requireAdmin, upload.array('images', 10), async (req, res, next) => {
+router.post('/productos', requireAdmin, async (req, res, next) => {
   try {
     const {
       name,
       description,
       price,
       category,
+      stock,
       status,
+      sizes,
+      colors,
       size_chart_html,
       featured,
-      variants_text
+      image_urls
     } = req.body;
 
     const slug = makeSlug(name);
-    const imagePaths = (req.files || []).map((file) => `/uploads/${file.filename}`);
-    const variants = parseVariantsText(variants_text);
-
-    const totalStock = variants.reduce((acc, item) => acc + Number(item.stock || 0), 0);
+    const imagePaths = parseImageLines(image_urls);
 
     const result = await pool.query(
       `INSERT INTO products
@@ -203,16 +189,17 @@ router.post('/productos', requireAdmin, upload.array('images', 10), async (req, 
         description,
         price,
         category,
-        totalStock,
+        stock,
         status,
         size_chart_html || '',
         featured === 'on'
       ]
     );
 
-    await replaceProductRelationsAndVariants(
+    await upsertRelations(
       result.rows[0].id,
-      variants,
+      parseCSV(sizes),
+      parseCSV(colors),
       imagePaths
     );
 
@@ -226,31 +213,32 @@ router.get('/productos/:id/editar', requireAdmin, async (req, res, next) => {
   try {
     const productId = req.params.id;
 
-    const [productResult, imagesResult, variantsResult] = await Promise.all([
+    const [productResult, sizesResult, colorsResult, imagesResult] = await Promise.all([
       pool.query('SELECT * FROM products WHERE id = $1 LIMIT 1', [productId]),
-      pool.query('SELECT * FROM product_images WHERE product_id = $1 ORDER BY sort_order, id', [productId]),
-      pool.query('SELECT * FROM product_variants WHERE product_id = $1 ORDER BY color_name, size_name', [productId])
+      pool.query('SELECT * FROM product_sizes WHERE product_id = $1 ORDER BY id', [productId]),
+      pool.query('SELECT * FROM product_colors WHERE product_id = $1 ORDER BY id', [productId]),
+      pool.query('SELECT * FROM product_images WHERE product_id = $1 ORDER BY sort_order, id', [productId])
     ]);
 
     const product = productResult.rows[0];
     if (!product) return res.redirect('/admin');
 
+    product.sizes = sizesResult.rows.map((r) => r.size_name);
+    product.colors = colorsResult.rows.map((r) => r.color_name);
     product.images = imagesResult.rows;
-    product.variants = variantsResult.rows;
-    product.variantsText = variantsResult.rows
-      .map((v) => `${v.color_name}|${v.size_name}|${v.stock}`)
-      .join('\n');
+    product.image_urls = imagesResult.rows.map((img) => img.image_url).join('\n');
 
     res.render('admin/product-form', {
       title: 'Admin | Editar producto',
-      product
+      product,
+      stockImages: getStockImages()
     });
   } catch (error) {
     next(error);
   }
 });
 
-router.put('/productos/:id', requireAdmin, upload.array('images', 10), async (req, res, next) => {
+router.put('/productos/:id', requireAdmin, async (req, res, next) => {
   try {
     const productId = req.params.id;
 
@@ -259,16 +247,17 @@ router.put('/productos/:id', requireAdmin, upload.array('images', 10), async (re
       description,
       price,
       category,
+      stock,
       status,
+      sizes,
+      colors,
       size_chart_html,
       featured,
-      variants_text
+      image_urls
     } = req.body;
 
     const slug = makeSlug(name);
-    const imagePaths = (req.files || []).map((file) => `/uploads/${file.filename}`);
-    const variants = parseVariantsText(variants_text);
-    const totalStock = variants.reduce((acc, item) => acc + Number(item.stock || 0), 0);
+    const imagePaths = parseImageLines(image_urls);
 
     await pool.query(
       `UPDATE products
@@ -289,7 +278,7 @@ router.put('/productos/:id', requireAdmin, upload.array('images', 10), async (re
         description,
         price,
         category,
-        totalStock,
+        stock,
         status,
         size_chart_html || '',
         featured === 'on',
@@ -297,9 +286,10 @@ router.put('/productos/:id', requireAdmin, upload.array('images', 10), async (re
       ]
     );
 
-    await replaceProductRelationsAndVariants(
+    await upsertRelations(
       productId,
-      variants,
+      parseCSV(sizes),
+      parseCSV(colors),
       imagePaths
     );
 

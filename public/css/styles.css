@@ -2436,3 +2436,114 @@ a {
 .btn-danger:hover {
   background: #c7373b;
 }
+
+.saas-gallery-header {
+  margin-top: 18px;
+  margin-bottom: 14px;
+}
+
+.saas-gallery-header h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  color: #0d1b2a;
+}
+
+.saas-gallery-header p {
+  margin: 0;
+  color: #64748b;
+}
+
+.saas-stock-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.saas-stock-image-btn {
+  border: 1px solid rgba(13, 27, 42, 0.08);
+  background: #fff;
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  transition: 0.2s ease;
+}
+
+.saas-stock-image-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(13, 27, 42, 0.08);
+}
+
+.saas-stock-image-btn.active {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(200, 169, 107, 0.25);
+}
+
+.saas-stock-image-btn img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+}
+
+.saas-stock-image-btn span {
+  display: block;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  color: #475569;
+  word-break: break-word;
+}
+
+.saas-selected-images {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.saas-selected-image-card {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 12px;
+  align-items: center;
+  background: #f8f4ec;
+  border: 1px solid rgba(13, 27, 42, 0.06);
+  border-radius: 18px;
+  padding: 10px;
+}
+
+.saas-selected-image-card img {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 14px;
+}
+
+.saas-selected-image-card-body {
+  display: grid;
+  gap: 8px;
+}
+
+.saas-selected-image-card-body span {
+  color: #475569;
+  word-break: break-word;
+  font-size: 0.9rem;
+}
+
+.saas-remove-image-btn {
+  width: fit-content;
+  border: none;
+  border-radius: 12px;
+  background: #dc2626;
+  color: #fff;
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.saas-no-images {
+  margin: 0;
+  color: #64748b;
+}
