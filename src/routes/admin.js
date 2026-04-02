@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const pool = require('../config/db');
 const { requireAdmin } = require('../middleware/auth');
-const { makeSlug, parseCSV } = require('../utils/format');
+const { makeSlug } = require('../utils/format');
 
 const router = express.Router();
 
@@ -12,6 +12,28 @@ function parseImageLines(value) {
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean);
+}
+
+function parseVariantsText(value) {
+  return String(value || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [color_name, size_name, stockRaw] = line.split('|').map((v) => String(v || '').trim());
+      return {
+        color_name,
+        size_name,
+        stock: Number(stockRaw || 0)
+      };
+    })
+    .filter((item) => item.color_name && item.size_name);
+}
+
+function buildVariantsText(variants) {
+  return (variants || [])
+    .map((variant) => `${variant.color_name}|${variant.size_name}|${variant.stock}`)
+    .join('\n');
 }
 
 function getStockImages() {
@@ -37,22 +59,34 @@ function getStockImages() {
   }
 }
 
-async function upsertRelations(productId, sizes, colors, imagePaths) {
+async function upsertRelations(productId, variants, imagePaths) {
   await pool.query('DELETE FROM product_sizes WHERE product_id = $1', [productId]);
   await pool.query('DELETE FROM product_colors WHERE product_id = $1', [productId]);
   await pool.query('DELETE FROM product_images WHERE product_id = $1', [productId]);
+  await pool.query('DELETE FROM product_variants WHERE product_id = $1', [productId]);
 
-  for (const size of sizes) {
+  const uniqueSizes = [...new Set(variants.map((v) => v.size_name))];
+  const uniqueColors = [...new Set(variants.map((v) => v.color_name))];
+
+  for (const size of uniqueSizes) {
     await pool.query(
       'INSERT INTO product_sizes (product_id, size_name) VALUES ($1, $2)',
       [productId, size]
     );
   }
 
-  for (const color of colors) {
+  for (const color of uniqueColors) {
     await pool.query(
       'INSERT INTO product_colors (product_id, color_name) VALUES ($1, $2)',
       [productId, color]
+    );
+  }
+
+  for (const variant of variants) {
+    await pool.query(
+      `INSERT INTO product_variants (product_id, color_name, size_name, stock, updated_at)
+       VALUES ($1, $2, $3, $4, NOW())`,
+      [productId, variant.color_name, variant.size_name, variant.stock]
     );
   }
 
@@ -166,17 +200,17 @@ router.post('/productos', requireAdmin, async (req, res, next) => {
       description,
       price,
       category,
-      stock,
       status,
-      sizes,
-      colors,
       size_chart_html,
       featured,
-      image_urls
+      image_urls,
+      variants_text
     } = req.body;
 
     const slug = makeSlug(name);
     const imagePaths = parseImageLines(image_urls);
+    const variants = parseVariantsText(variants_text);
+    const totalStock = variants.reduce((acc, item) => acc + Number(item.stock || 0), 0);
 
     const result = await pool.query(
       `INSERT INTO products
@@ -189,19 +223,14 @@ router.post('/productos', requireAdmin, async (req, res, next) => {
         description,
         price,
         category,
-        stock,
+        totalStock,
         status,
         size_chart_html || '',
         featured === 'on'
       ]
     );
 
-    await upsertRelations(
-      result.rows[0].id,
-      parseCSV(sizes),
-      parseCSV(colors),
-      imagePaths
-    );
+    await upsertRelations(result.rows[0].id, variants, imagePaths);
 
     res.redirect('/admin');
   } catch (error) {
@@ -213,20 +242,18 @@ router.get('/productos/:id/editar', requireAdmin, async (req, res, next) => {
   try {
     const productId = req.params.id;
 
-    const [productResult, sizesResult, colorsResult, imagesResult] = await Promise.all([
+    const [productResult, imagesResult, variantsResult] = await Promise.all([
       pool.query('SELECT * FROM products WHERE id = $1 LIMIT 1', [productId]),
-      pool.query('SELECT * FROM product_sizes WHERE product_id = $1 ORDER BY id', [productId]),
-      pool.query('SELECT * FROM product_colors WHERE product_id = $1 ORDER BY id', [productId]),
-      pool.query('SELECT * FROM product_images WHERE product_id = $1 ORDER BY sort_order, id', [productId])
+      pool.query('SELECT * FROM product_images WHERE product_id = $1 ORDER BY sort_order, id', [productId]),
+      pool.query('SELECT * FROM product_variants WHERE product_id = $1 ORDER BY color_name, size_name', [productId])
     ]);
 
     const product = productResult.rows[0];
     if (!product) return res.redirect('/admin');
 
-    product.sizes = sizesResult.rows.map((r) => r.size_name);
-    product.colors = colorsResult.rows.map((r) => r.color_name);
     product.images = imagesResult.rows;
     product.image_urls = imagesResult.rows.map((img) => img.image_url).join('\n');
+    product.variants_text = buildVariantsText(variantsResult.rows);
 
     res.render('admin/product-form', {
       title: 'Admin | Editar producto',
@@ -247,17 +274,17 @@ router.put('/productos/:id', requireAdmin, async (req, res, next) => {
       description,
       price,
       category,
-      stock,
       status,
-      sizes,
-      colors,
       size_chart_html,
       featured,
-      image_urls
+      image_urls,
+      variants_text
     } = req.body;
 
     const slug = makeSlug(name);
     const imagePaths = parseImageLines(image_urls);
+    const variants = parseVariantsText(variants_text);
+    const totalStock = variants.reduce((acc, item) => acc + Number(item.stock || 0), 0);
 
     await pool.query(
       `UPDATE products
@@ -278,7 +305,7 @@ router.put('/productos/:id', requireAdmin, async (req, res, next) => {
         description,
         price,
         category,
-        stock,
+        totalStock,
         status,
         size_chart_html || '',
         featured === 'on',
@@ -286,12 +313,7 @@ router.put('/productos/:id', requireAdmin, async (req, res, next) => {
       ]
     );
 
-    await upsertRelations(
-      productId,
-      parseCSV(sizes),
-      parseCSV(colors),
-      imagePaths
-    );
+    await upsertRelations(productId, variants, imagePaths);
 
     res.redirect('/admin');
   } catch (error) {

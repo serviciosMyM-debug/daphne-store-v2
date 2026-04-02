@@ -46,10 +46,7 @@
         </section>
 
         <section class="saas-card saas-form-section">
-          <h2>Stock y visibilidad</h2>
-
-          <label>Stock disponible</label>
-          <input type="number" name="stock" min="0" required value="<%= product?.stock ?? 0 %>">
+          <h2>Stock, visibilidad y variantes</h2>
 
           <label>Estado visual</label>
           <select name="status" required>
@@ -58,11 +55,17 @@
             <option value="sold_out" <%= product?.status === 'sold_out' ? 'selected' : '' %>>Agotado</option>
           </select>
 
-          <label>Talles (separados por coma)</label>
-          <input type="text" name="sizes" value="<%= product?.sizes?.join(', ') || '' %>" placeholder="S, M, L">
+          <label>Variantes (una por línea)</label>
+          <textarea
+            name="variants_text"
+            rows="8"
+            placeholder="Blanco|L|2&#10;Blanco|M|2&#10;Blanco|S|2&#10;Negro|L|2&#10;Negro|M|2&#10;Negro|S|2"
+          ><%= product?.variants_text || '' %></textarea>
 
-          <label>Colores (separados por coma)</label>
-          <input type="text" name="colors" value="<%= product?.colors?.join(', ') || '' %>" placeholder="Blanco, Negro">
+          <p style="margin-top:10px; color:#64748b;">
+            Formato: <strong>Color|Talle|Stock</strong><br>
+            Ejemplo: <strong>Blanco|M|2</strong>
+          </p>
 
           <label class="saas-checkbox">
             <input type="checkbox" name="featured" <%= product?.featured ? 'checked' : '' %>>
@@ -137,7 +140,6 @@
 
       function renderSelectedImages() {
         const images = getSelectedImages();
-
         selectedImagesContainer.innerHTML = '';
 
         if (!images.length) {
